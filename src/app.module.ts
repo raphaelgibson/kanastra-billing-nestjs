@@ -4,15 +4,16 @@ import { EmailsModule } from './emails/emails.module';
 import { BillingsModule } from './billings/billings.module';
 import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { env } from './env';
-import { Billing } from './billings/billing.entity';
+import { Billings } from './billings/billings.entity';
+import { AppController } from './app.controller';
 
 let dbConfig: TypeOrmModuleOptions
 
-if (env.NODE_ENV === 'test' || env.NODE_ENV === 'dev') {
+if (env.NODE_ENV === 'test') {
   dbConfig = {
     type: 'sqlite',
     database: ':memory:',
-    entities: [Billing],
+    entities: [Billings],
     synchronize: true
   }
 } else {
@@ -23,7 +24,8 @@ if (env.NODE_ENV === 'test' || env.NODE_ENV === 'dev') {
     username: env.DB_USER,
     password: env.DB_PASSWORD,
     database: env.DB_NAME,
-    entities: [Billing]
+    entities: [Billings],
+    synchronize: env.NODE_ENV === 'dev'
   }
 }
 
@@ -33,6 +35,7 @@ if (env.NODE_ENV === 'test' || env.NODE_ENV === 'dev') {
     EmailsModule,
     BillingsModule,
     TypeOrmModule.forRoot(dbConfig)
-  ]
+  ],
+  controllers: [AppController],
 })
 export class AppModule {}

@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Billing } from './billing.entity';
+import { Billings } from './billings.entity';
 import { In, Repository } from 'typeorm';
 import { ClientProxy } from '@nestjs/microservices';
 
@@ -16,7 +16,7 @@ export type BillingRecord = {
 @Injectable()
 export class BillingsService {
   constructor(
-    @InjectRepository(Billing) private billingRepo: Repository<Billing>,
+    @InjectRepository(Billings) private billingsRepo: Repository<Billings>,
     @Inject('KAFKA_SERVICE') private readonly kafkaClient: ClientProxy
   ) {}
 
@@ -24,7 +24,7 @@ export class BillingsService {
     if (records.length === 0) return
 
     const existingDebtIds = new Set(
-      (await this.billingRepo.find({
+      (await this.billingsRepo.find({
         where: { debtId: In(records.map(record => record.debtId)) }
       })).map(record => record.debtId)
     )
@@ -34,7 +34,7 @@ export class BillingsService {
     if (newRecords.length === 0) return
 
     newRecords.forEach(record => {
-      this.kafkaClient.emit('invoice_generation', record)
+      this.kafkaClient.emit('generate.invoice', record)
     })
   }
 }

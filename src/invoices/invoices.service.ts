@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Billing } from '../billings/billing.entity';
+import { Billings } from '../billings/billings.entity';
 import { Repository } from 'typeorm';
 
 export type BillingRecord = {
@@ -15,13 +15,13 @@ export type BillingRecord = {
 @Injectable()
 export class InvoicesService {
   constructor(
-    @InjectRepository(Billing) private billingRepo: Repository<Billing>
+    @InjectRepository(Billings) private billingsRepo: Repository<Billings>
   ) {}
 
   async generateInvoice(record: BillingRecord): Promise<string> {
     const invoice = `Invoice generated to ${record.name} - Value: R$ ${record.debtAmount}`;
 
-    await this.billingRepo.save({
+    await this.billingsRepo.save({
       name: record.name,
       governmentId: record.governmentId,
       email: record.email,

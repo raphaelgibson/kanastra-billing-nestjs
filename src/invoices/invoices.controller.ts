@@ -1,5 +1,5 @@
 import { Controller, Inject, Logger } from "@nestjs/common";
-import { ClientProxy, MessagePattern, Payload } from "@nestjs/microservices";
+import { ClientProxy, EventPattern, Payload } from "@nestjs/microservices";
 import { BillingRecord, InvoicesService } from "./invoices.service";
 
 @Controller()
@@ -11,11 +11,11 @@ export class InvoicesController {
     private readonly invoicesService: InvoicesService,
   ) {}
 
-  @MessagePattern('invoice_generation')
+  @EventPattern('generate.invoice')
   async handleInvoiceGeneration(@Payload() data: BillingRecord) {
     this.logger.log(`Received message to generate invoice for ${data.name}`);
     const invoice = await this.invoicesService.generateInvoice(data);
     this.logger.log(`Invoice generated: ${invoice}. Publishing email_sending event...`)
-    this.client.emit('email_sending', { email: data.email, invoice });
+    this.client.emit('send.email', { email: data.email, invoice });
   }
 }

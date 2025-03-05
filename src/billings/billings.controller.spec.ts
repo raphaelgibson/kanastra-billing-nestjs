@@ -60,6 +60,12 @@ describe('BillingsController', () => {
     expect(response).toEqual({ message: 'Arquivo processado com sucesso' });
   });
 
+  it('should throw BAD_REQUEST if file is not provided', async () => {
+    await expect(controller.uploadFile()).rejects.toThrow(
+      new HttpException('No file provided', HttpStatus.BAD_REQUEST),
+    );
+  });
+
   it('should throw BAD_REQUEST when CsvParseError occurs', async () => {
     jest.spyOn(csvParserService, 'parseCsv').mockRejectedValue(new CsvParseError('Invalid CSV format'));
 
@@ -72,7 +78,7 @@ describe('BillingsController', () => {
     jest.spyOn(billingsService, 'processRecords').mockRejectedValue(new Error('Unexpected error'));
 
     await expect(controller.uploadFile(mockFile as Express.Multer.File)).rejects.toThrow(
-      new HttpException('An unexpected error has ocurred processing the file', HttpStatus.INTERNAL_SERVER_ERROR),
+      new HttpException('An unexpected error has occurred processing the file', HttpStatus.INTERNAL_SERVER_ERROR),
     );
   });
 });

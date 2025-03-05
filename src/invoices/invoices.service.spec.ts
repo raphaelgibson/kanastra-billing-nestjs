@@ -1,12 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BillingRecord, InvoicesService } from './invoices.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Billing } from '../billings/billing.entity';
+import { Billings } from '../billings/billings.entity';
 import { Repository } from 'typeorm';
 
 describe('InvoicesService', () => {
   let service: InvoicesService;
-  let billingRepo: Repository<Billing>;
+  let billingsRepo: Repository<Billings>;
 
   const mockRecord: BillingRecord = {
     name: 'John Doe',
@@ -22,7 +22,7 @@ describe('InvoicesService', () => {
       providers: [
         InvoicesService,
         {
-          provide: getRepositoryToken(Billing),
+          provide: getRepositoryToken(Billings),
           useValue: {
             save: jest.fn().mockResolvedValue(undefined),
           },
@@ -31,14 +31,14 @@ describe('InvoicesService', () => {
     }).compile();
 
     service = module.get<InvoicesService>(InvoicesService);
-    billingRepo = module.get<Repository<Billing>>(getRepositoryToken(Billing));
+    billingsRepo = module.get<Repository<Billings>>(getRepositoryToken(Billings));
   });
 
   it('should generate an invoice and save it to the database', async () => {
     const result = await service.generateInvoice(mockRecord);
 
     expect(result).toBe(`Invoice generated to John Doe - Value: R$ 1000`);
-    expect(billingRepo.save).toHaveBeenCalledWith({
+    expect(billingsRepo.save).toHaveBeenCalledWith({
       name: mockRecord.name,
       governmentId: mockRecord.governmentId,
       email: mockRecord.email,
@@ -49,7 +49,7 @@ describe('InvoicesService', () => {
   });
 
   it('should handle errors when saving to database', async () => {
-    jest.spyOn(billingRepo, 'save').mockRejectedValue(new Error('Database error'));
+    jest.spyOn(billingsRepo, 'save').mockRejectedValue(new Error('Database error'));
 
     await expect(service.generateInvoice(mockRecord)).rejects.toThrow('Database error');
   });
