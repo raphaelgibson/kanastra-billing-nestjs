@@ -17,13 +17,15 @@ export type BillingRecord = {
 export class InvoicesService {
   constructor(
     @InjectRepository(Billings) private billingsRepo: Repository<Billings>,
-    @Inject('KAFKA_CLIENT') private readonly kafkaClient: ClientKafka
+    @Inject('KAFKA_CLIENT') private readonly kafkaClient: ClientKafka,
   ) {}
 
   async generateInvoice(record: BillingRecord): Promise<string> {
-    const existingDebtId = await this.billingsRepo.findOneBy({ debtId: record.debtId });
+    const existingDebtId = await this.billingsRepo.count({
+      where: { debtId: record.debtId },
+    });
 
-    if (existingDebtId) {
+    if (existingDebtId > 0) {
       return `Invoice already generated for ${record.name}`;
     }
 
@@ -35,7 +37,7 @@ export class InvoicesService {
       email: record.email,
       debtAmount: record.debtAmount,
       debtDueDate: record.debtDueDate,
-      debtId: record.debtId
+      debtId: record.debtId,
     });
 
     this.kafkaClient.emit('send.email', { email: record.email, invoice });

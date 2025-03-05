@@ -17,8 +17,8 @@ async function bootstrap() {
         groupId: 'invoice-consumer-group',
         maxInFlightRequests: 1,
         retry: {
-          retries: 0
-        }
+          retries: 0,
+        },
       },
     },
   });
@@ -34,8 +34,8 @@ async function bootstrap() {
         groupId: 'mail-consumer-group',
         maxInFlightRequests: 1,
         retry: {
-          retries: 0
-        }
+          retries: 0,
+        },
       },
     },
   });

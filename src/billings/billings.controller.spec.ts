@@ -7,7 +7,7 @@ import { HttpException, HttpStatus } from '@nestjs/common';
 describe('BillingsController', () => {
   let controller: BillingsController;
   let csvParserService: CsvParserService;
-  let billingsService: BillingsService
+  let billingsService: BillingsService;
 
   const mockFile = {
     buffer: Buffer.from(
@@ -19,10 +19,10 @@ describe('BillingsController', () => {
     name: 'John Doe',
     governmentId: '12345678900',
     email: 'johndoe@kanastra.com.br',
-    debtAmount: 1000.00,
+    debtAmount: 1000.0,
     debtDueDate: new Date('2025-01-01'),
     debtId: '1adb6ccf-ff16-467f-bea7-5f05d494280f',
-  }
+  };
 
   beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -38,7 +38,7 @@ describe('BillingsController', () => {
           provide: BillingsService,
           useValue: {
             processRecords: jest.fn().mockResolvedValue(undefined),
-          }
+          },
         },
       ],
     }).compile();
@@ -56,7 +56,9 @@ describe('BillingsController', () => {
   });
 
   it('should return a success message when the file is processed successfully', async () => {
-    const response = await controller.uploadFile(mockFile as Express.Multer.File);
+    const response = await controller.uploadFile(
+      mockFile as Express.Multer.File,
+    );
     expect(response).toEqual({ message: 'Arquivo processado com sucesso' });
   });
 
@@ -67,18 +69,29 @@ describe('BillingsController', () => {
   });
 
   it('should throw BAD_REQUEST when CsvParseError occurs', async () => {
-    jest.spyOn(csvParserService, 'parseCsv').mockRejectedValue(new CsvParseError('Invalid CSV format'));
+    jest
+      .spyOn(csvParserService, 'parseCsv')
+      .mockRejectedValue(new CsvParseError('Invalid CSV format'));
 
-    await expect(controller.uploadFile(mockFile as Express.Multer.File)).rejects.toThrow(
+    await expect(
+      controller.uploadFile(mockFile as Express.Multer.File),
+    ).rejects.toThrow(
       new HttpException('Invalid CSV format', HttpStatus.BAD_REQUEST),
     );
   });
 
   it('should throw INTERNAL_SERVER_ERROR on unexpected errors', async () => {
-    jest.spyOn(billingsService, 'processRecords').mockRejectedValue(new Error('Unexpected error'));
+    jest
+      .spyOn(billingsService, 'processRecords')
+      .mockRejectedValue(new Error('Unexpected error'));
 
-    await expect(controller.uploadFile(mockFile as Express.Multer.File)).rejects.toThrow(
-      new HttpException('An unexpected error has occurred processing the file', HttpStatus.INTERNAL_SERVER_ERROR),
+    await expect(
+      controller.uploadFile(mockFile as Express.Multer.File),
+    ).rejects.toThrow(
+      new HttpException(
+        'An unexpected error has occurred processing the file',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      ),
     );
   });
 });

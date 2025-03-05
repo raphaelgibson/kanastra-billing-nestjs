@@ -22,14 +22,14 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
         },
       },
     ]),
-    TypeOrmModule.forFeature([Billings])
+    TypeOrmModule.forFeature([Billings]),
   ],
   controllers: [BillingsController],
   providers: [
     BillingsService,
     CsvParserService,
     EmailsService,
-    InvoicesService
+    InvoicesService,
   ],
 })
 export class BillingsModule {}

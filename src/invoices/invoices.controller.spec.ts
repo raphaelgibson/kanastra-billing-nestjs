@@ -12,7 +12,7 @@ describe('InvoicesController', () => {
     name: 'John Doe',
     governmentId: '12345678900',
     email: 'johndoe@kanastra.com.br',
-    debtAmount: 1000.00,
+    debtAmount: 1000.0,
     debtDueDate: new Date('2025-01-01'),
     debtId: '1adb6ccf-ff16-467f-bea7-5f05d494280f',
   };
@@ -49,14 +49,16 @@ describe('InvoicesController', () => {
     expect(logSpy).toHaveBeenCalledWith(
       `Received message to generate invoice for ${mockInvoice.name}`,
     );
-    expect(logSpy).toHaveBeenCalledWith(
-      `Invoice generated: Invoice #12345.`,
-    );
+    expect(logSpy).toHaveBeenCalledWith(`Invoice generated: Invoice #12345.`);
   });
 
   it('should not catch errors', async () => {
-    jest.spyOn(invoicesService, 'generateInvoice').mockRejectedValue(new Error('Service Error'));
+    jest
+      .spyOn(invoicesService, 'generateInvoice')
+      .mockRejectedValue(new Error('Service Error'));
 
-    await expect(controller.handleInvoiceGeneration(mockInvoice)).rejects.toThrow('Service Error');
+    await expect(
+      controller.handleInvoiceGeneration(mockInvoice),
+    ).rejects.toThrow('Service Error');
   });
 });

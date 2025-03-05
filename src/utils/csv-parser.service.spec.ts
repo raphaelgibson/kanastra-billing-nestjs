@@ -32,7 +32,8 @@ describe('CsvParserService', () => {
 
   it('should throw an error if the CSV file is invalid', async () => {
     const invalidFileBuffer = Buffer.from(mockInvalidCsvData);
-    await expect(service.parseCsv(invalidFileBuffer))
-      .rejects.toThrow('Invalid CSV format: Missing required columns.');
+    await expect(service.parseCsv(invalidFileBuffer)).rejects.toThrow(
+      'Invalid CSV format: Missing required columns.',
+    );
   });
 });

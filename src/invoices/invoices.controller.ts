@@ -1,6 +1,6 @@
-import { Controller, Logger } from "@nestjs/common";
-import { EventPattern, Payload } from "@nestjs/microservices";
-import { BillingRecord, InvoicesService } from "./invoices.service";
+import { Controller, Logger } from '@nestjs/common';
+import { EventPattern, Payload } from '@nestjs/microservices';
+import { BillingRecord, InvoicesService } from './invoices.service';
 
 @Controller()
 export class InvoicesController {
@@ -12,6 +12,6 @@ export class InvoicesController {
   async handleInvoiceGeneration(@Payload() data: BillingRecord) {
     this.logger.log(`Received message to generate invoice for ${data.name}`);
     const invoice = await this.invoicesService.generateInvoice(data);
-    this.logger.log(`Invoice generated: ${invoice}.`)
+    this.logger.log(`Invoice generated: ${invoice}.`);
   }
 }

@@ -19,7 +19,7 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
         },
       },
     ]),
-    TypeOrmModule.forFeature([Billings])
+    TypeOrmModule.forFeature([Billings]),
   ],
   controllers: [InvoicesController],
   providers: [InvoicesService],

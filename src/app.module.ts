@@ -7,15 +7,15 @@ import { env } from './env';
 import { Billings } from './billings/billings.entity';
 import { AppController } from './app.controller';
 
-let dbConfig: TypeOrmModuleOptions
+let dbConfig: TypeOrmModuleOptions;
 
 if (env.NODE_ENV === 'test') {
   dbConfig = {
     type: 'sqlite',
     database: ':memory:',
     entities: [Billings],
-    synchronize: true
-  }
+    synchronize: true,
+  };
 } else {
   dbConfig = {
     type: 'postgres',
@@ -25,8 +25,8 @@ if (env.NODE_ENV === 'test') {
     password: env.DB_PASSWORD,
     database: env.DB_NAME,
     entities: [Billings],
-    synchronize: env.NODE_ENV === 'dev'
-  }
+    synchronize: env.NODE_ENV === 'dev',
+  };
 }
 
 @Module({
@@ -34,7 +34,7 @@ if (env.NODE_ENV === 'test') {
     InvoicesModule,
     EmailsModule,
     BillingsModule,
-    TypeOrmModule.forRoot(dbConfig)
+    TypeOrmModule.forRoot(dbConfig),
   ],
   controllers: [AppController],
 })

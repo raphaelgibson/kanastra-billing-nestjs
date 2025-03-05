@@ -37,19 +37,28 @@ describe('EmailsController', () => {
   it('should call EmailsService.sendEmail() with correct params', async () => {
     await controller.handleEmailSending(mockPayload);
 
-    expect(emailsService.sendEmail).toHaveBeenCalledWith(mockPayload.email, mockPayload.invoice);
+    expect(emailsService.sendEmail).toHaveBeenCalledWith(
+      mockPayload.email,
+      mockPayload.invoice,
+    );
   });
 
   it('should log the received event and the email response', async () => {
     await controller.handleEmailSending(mockPayload);
 
-    expect(logSpy).toHaveBeenCalledWith(`Received email_sending event: ${JSON.stringify(mockPayload)}`);
+    expect(logSpy).toHaveBeenCalledWith(
+      `Received email_sending event: ${JSON.stringify(mockPayload)}`,
+    );
     expect(logSpy).toHaveBeenCalledWith('Email sent successfully');
   });
 
   it('should handle errors when sending email', async () => {
-    jest.spyOn(emailsService, 'sendEmail').mockRejectedValue(new Error('Email service down'));
+    jest
+      .spyOn(emailsService, 'sendEmail')
+      .mockRejectedValue(new Error('Email service down'));
 
-    await expect(controller.handleEmailSending(mockPayload)).rejects.toThrow('Email service down');
+    await expect(controller.handleEmailSending(mockPayload)).rejects.toThrow(
+      'Email service down',
+    );
   });
 });

@@ -1,11 +1,11 @@
-import { Controller, Logger } from "@nestjs/common";
-import { EventPattern, Payload } from "@nestjs/microservices";
-import { EmailsService } from "./emails.service";
+import { Controller, Logger } from '@nestjs/common';
+import { EventPattern, Payload } from '@nestjs/microservices';
+import { EmailsService } from './emails.service';
 
 type SendEmailPayload = {
   email: string;
   invoice: string;
-}
+};
 
 @Controller()
 export class EmailsController {
@@ -16,7 +16,10 @@ export class EmailsController {
   @EventPattern('send.email')
   async handleEmailSending(@Payload() data: SendEmailPayload) {
     this.logger.log(`Received email_sending event: ${JSON.stringify(data)}`);
-    const sendEmailResponse = await this.emailsService.sendEmail(data.email, data.invoice);
+    const sendEmailResponse = await this.emailsService.sendEmail(
+      data.email,
+      data.invoice,
+    );
     this.logger.log(sendEmailResponse);
   }
 }

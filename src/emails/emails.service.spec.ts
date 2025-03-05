@@ -13,7 +13,12 @@ describe('EmailsService', () => {
   });
 
   it('should send an e-mail', async () => {
-    const result = await service.sendEmail('johndoe@kanastra.com.br', 'any_invoice');
-    expect(result).toContain('E-mail sent to johndoe@kanastra.com.br: any_invoice');
+    const result = await service.sendEmail(
+      'johndoe@kanastra.com.br',
+      'any_invoice',
+    );
+    expect(result).toContain(
+      'E-mail sent to johndoe@kanastra.com.br: any_invoice',
+    );
   });
 });

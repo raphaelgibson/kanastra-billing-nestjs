@@ -14,7 +14,7 @@ describe('InvoicesService', () => {
     name: 'John Doe',
     governmentId: '12345678900',
     email: 'johndoe@kanastra.com.br',
-    debtAmount: 1000.00,
+    debtAmount: 1000.0,
     debtDueDate: new Date('2025-01-01'),
     debtId: '1adb6ccf-ff16-467f-bea7-5f05d494280f',
   };
@@ -40,7 +40,9 @@ describe('InvoicesService', () => {
     }).compile();
 
     service = moduleFixture.get<InvoicesService>(InvoicesService);
-    billingsRepo = moduleFixture.get<Repository<Billings>>(getRepositoryToken(Billings));
+    billingsRepo = moduleFixture.get<Repository<Billings>>(
+      getRepositoryToken(Billings),
+    );
     kafkaClient = moduleFixture.get<ClientKafka>('KAFKA_CLIENT');
   });
 
@@ -63,7 +65,9 @@ describe('InvoicesService', () => {
   });
 
   it('should not generate a new invoice if debtId already exists', async () => {
-    jest.spyOn(billingsRepo, 'findOneBy').mockResolvedValueOnce({ id: 123, ...mockRecord });
+    jest
+      .spyOn(billingsRepo, 'findOneBy')
+      .mockResolvedValueOnce({ id: 123, ...mockRecord });
 
     const result = await service.generateInvoice(mockRecord);
 
@@ -73,9 +77,13 @@ describe('InvoicesService', () => {
   });
 
   it('should handle errors when saving to database', async () => {
-    jest.spyOn(billingsRepo, 'save').mockRejectedValue(new Error('Database error'));
+    jest
+      .spyOn(billingsRepo, 'save')
+      .mockRejectedValue(new Error('Database error'));
 
-    await expect(service.generateInvoice(mockRecord)).rejects.toThrow('Database error');
+    await expect(service.generateInvoice(mockRecord)).rejects.toThrow(
+      'Database error',
+    );
     expect(kafkaClient.emit).not.toHaveBeenCalled();
   });
 });

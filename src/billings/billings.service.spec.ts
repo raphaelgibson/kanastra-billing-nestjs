@@ -15,10 +15,10 @@ describe('BillingsService', () => {
       name: 'John Doe',
       governmentId: '12345678900',
       email: 'johndoe@kanastra.com.br',
-      debtAmount: 1000.00,
+      debtAmount: 1000.0,
       debtDueDate: new Date('2025-01-01'),
       debtId: '1adb6ccf-ff16-467f-bea7-5f05d494280f',
-    }
+    };
   }
 
   beforeEach(async () => {
@@ -41,7 +41,9 @@ describe('BillingsService', () => {
     }).compile();
 
     service = moduleFixture.get<BillingsService>(BillingsService);
-    billingsRepo = moduleFixture.get<Repository<Billings>>(getRepositoryToken(Billings));
+    billingsRepo = moduleFixture.get<Repository<Billings>>(
+      getRepositoryToken(Billings),
+    );
     kafkaClient = moduleFixture.get<ClientKafka>('KAFKA_CLIENT');
   });
 
@@ -56,7 +58,9 @@ describe('BillingsService', () => {
 
   it('should not publish event for already processed records', async () => {
     const record = mockRecord();
-    jest.spyOn(billingsRepo, 'find').mockResolvedValue([{ id: 123, ...record }]);
+    jest
+      .spyOn(billingsRepo, 'find')
+      .mockResolvedValue([{ id: 123, ...record }]);
 
     await service.processRecords([record]);
 
@@ -64,10 +68,14 @@ describe('BillingsService', () => {
   });
 
   it('should not catch errors while processing records', async () => {
-    const record = mockRecord()
-    jest.spyOn(billingsRepo, 'find').mockRejectedValue(new Error('Database error'));
+    const record = mockRecord();
+    jest
+      .spyOn(billingsRepo, 'find')
+      .mockRejectedValue(new Error('Database error'));
 
-    await expect(service.processRecords([record])).rejects.toThrow('Database error');
+    await expect(service.processRecords([record])).rejects.toThrow(
+      'Database error',
+    );
   });
 
   it('should not publish event when no new records are found', async () => {

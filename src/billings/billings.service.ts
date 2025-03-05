@@ -17,24 +17,35 @@ export type BillingRecord = {
 export class BillingsService {
   constructor(
     @InjectRepository(Billings) private billingsRepo: Repository<Billings>,
-    @Inject('KAFKA_CLIENT') private readonly kafkaClient: ClientKafka
+    @Inject('KAFKA_CLIENT') private readonly kafkaClient: ClientKafka,
   ) {}
 
   async processRecords(records: BillingRecord[]): Promise<void> {
-    if (records.length === 0) return
+    if (records.length === 0) return;
 
-    const existingDebtIds = new Set(
-      (await this.billingsRepo.find({
-        where: { debtId: In(records.map(record => record.debtId)) }
-      })).map(record => record.debtId)
-    )
+    const chunkSize = 10000;
 
-    const newRecords = records.filter(record => !existingDebtIds.has(record.debtId))
-    
-    if (newRecords.length === 0) return
+    for (let i = 0; i < records.length; i += chunkSize) {
+      console.log(i);
+      console.log(i);
+      console.log(i);
+      const chunk = records.slice(i, i + chunkSize);
+      const chunkDebtIds = chunk.map((record) => record.debtId);
 
-    newRecords.forEach(record => {
-      this.kafkaClient.emit('generate.invoice', record)
-    })
+      const existingRecords = await this.billingsRepo.find({
+        select: ['debtId'],
+        where: { debtId: In(chunkDebtIds) },
+      });
+
+      const existingIds = new Set(existingRecords.map((r) => r.debtId));
+
+      const newRecords = chunk.filter(
+        (record) => !existingIds.has(record.debtId),
+      );
+
+      for (const record of newRecords) {
+        this.kafkaClient.emit('generate.invoice', record);
+      }
+    }
   }
 }
