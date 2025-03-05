@@ -1,7 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BillingsController } from './billings.controller';
 import { BillingsService } from './billings.service';
-import { CsvParserService } from '../utils/csv-parser.service';
+import { CsvParseError, CsvParserService } from '../utils/csv-parser.service';
+import { HttpException, HttpStatus } from '@nestjs/common';
 
 describe('BillingsController', () => {
   let controller: BillingsController;
@@ -28,16 +29,16 @@ describe('BillingsController', () => {
       controllers: [BillingsController],
       providers: [
         {
-          provide: BillingsService,
-          useValue: {
-            processRecords: jest.fn()
-          }
-        },
-        {
           provide: CsvParserService,
           useValue: {
             parseCsv: jest.fn().mockResolvedValue([mockRecord]),
           },
+        },
+        {
+          provide: BillingsService,
+          useValue: {
+            processRecords: jest.fn().mockResolvedValue(undefined),
+          }
         },
       ],
     }).compile();
@@ -57,5 +58,21 @@ describe('BillingsController', () => {
   it('should return a success message when the file is processed successfully', async () => {
     const response = await controller.uploadFile(mockFile as Express.Multer.File);
     expect(response).toEqual({ message: 'Arquivo processado com sucesso' });
+  });
+
+  it('should throw BAD_REQUEST when CsvParseError occurs', async () => {
+    jest.spyOn(csvParserService, 'parseCsv').mockRejectedValue(new CsvParseError('Invalid CSV format'));
+
+    await expect(controller.uploadFile(mockFile as Express.Multer.File)).rejects.toThrow(
+      new HttpException('Invalid CSV format', HttpStatus.BAD_REQUEST),
+    );
+  });
+
+  it('should throw INTERNAL_SERVER_ERROR on unexpected errors', async () => {
+    jest.spyOn(billingsService, 'processRecords').mockRejectedValue(new Error('Unexpected error'));
+
+    await expect(controller.uploadFile(mockFile as Express.Multer.File)).rejects.toThrow(
+      new HttpException('An unexpected error has ocurred processing the file', HttpStatus.INTERNAL_SERVER_ERROR),
+    );
   });
 });

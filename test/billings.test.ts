@@ -5,10 +5,13 @@ import { AppModule } from '../src/app.module';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Billing } from '../src/billings/billing.entity';
 import { Repository } from 'typeorm';
+import { ClientProxy } from '@nestjs/microservices';
+import { of } from 'rxjs';
 
-describe('BillingsController (e2e)', () => {
+describe('Billings (e2e)', () => {
   let app: INestApplication;
   let billingRepository: Repository<Billing>
+  let kafkaClient: ClientProxy;
 
   const mockCsvData = `name,governmentId,email,debtAmount,debtDueDate,debtId\nJohn Doe,12345678900,johndoe@kanastra.com.br,1000.00,2025-01-01,1adb6ccf-ff16-467f-bea7-5f05d494280f`;
   const mockInvalidCsvData = 'invalid\ndata';
@@ -24,6 +27,12 @@ describe('BillingsController (e2e)', () => {
             findOne: jest.fn(),
           },
         },
+        {
+          provide: 'KAFKA_SERVICE',
+          useValue: {
+            emit: jest.fn(),
+          },
+        },
       ]
     })
     .compile();
@@ -32,6 +41,7 @@ describe('BillingsController (e2e)', () => {
     await app.init();
 
     billingRepository = moduleFixture.get<Repository<Billing>>(getRepositoryToken(Billing));
+    kafkaClient = moduleFixture.get<ClientProxy>('KAFKA_SERVICE');
   });
 
   afterAll(async () => {
@@ -42,10 +52,11 @@ describe('BillingsController (e2e)', () => {
     jest.clearAllMocks();
   })
 
-  it('should upload a CSV file and process it', async () => {
+  it('should upload a CSV file and process it by emitting invoice_generation event', async () => {
     const fileBuffer = Buffer.from(mockCsvData, 'utf-8');
 
     jest.spyOn(billingRepository, 'save').mockResolvedValue({} as any);
+    const emitSpy = jest.spyOn(kafkaClient, 'emit').mockImplementation(() => of(undefined));
 
     const response = await request(app.getHttpServer())
       .post('/billings/upload')
@@ -53,7 +64,15 @@ describe('BillingsController (e2e)', () => {
       .expect(201);
 
     expect(response.body.message).toBe('Arquivo processado com sucesso');
-    expect(billingRepository.save).toHaveBeenCalled();
+    // expect(billingRepository.save).toHaveBeenCalled();
+    expect(emitSpy).toHaveBeenCalledWith('invoice_generation', expect.objectContaining({
+      debtAmount: '1000.00',
+      debtDueDate: '2025-01-01',
+      debtId: '1adb6ccf-ff16-467f-bea7-5f05d494280f',
+      email: 'johndoe@kanastra.com.br',
+      governmentId: '12345678900',
+      name: 'John Doe',
+    })); 
   });
 
   it('should throw an error if the file is invalid', async () => {

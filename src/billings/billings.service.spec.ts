@@ -1,16 +1,14 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BillingRecord, BillingsService } from './billings.service';
-import { EmailsService } from './../emails/emails.service';
-import { InvoicesService } from './../invoices/invoices.service';
 import { Repository } from 'typeorm';
 import { Billing } from './billing.entity';
 import { getRepositoryToken } from '@nestjs/typeorm';
+import { ClientProxy } from '@nestjs/microservices';
 
 describe('BillingsService', () => {
   let service: BillingsService;
   let billingRepo: Repository<Billing>;
-  let emailsService: EmailsService;
-  let invoicesService: InvoicesService;
+  let kafkaClient: ClientProxy;
 
   function mockRecord(): BillingRecord {
     return {
@@ -30,60 +28,53 @@ describe('BillingsService', () => {
         {
           provide: getRepositoryToken(Billing),
           useValue: {
-            save: jest.fn(),
-            findOne: jest.fn(),
+            find: jest.fn(),
           },
         },
         {
-          provide: EmailsService,
+          provide: 'KAFKA_SERVICE',
           useValue: {
-            sendEmail: jest.fn(),
+            emit: jest.fn(),
           },
-        },
-        {
-          provide: InvoicesService,
-          useValue: {
-            generateInvoice: jest.fn().mockResolvedValue('Invoice generated'),
-          },
-        },
+        }
       ],
     }).compile();
 
     service = module.get<BillingsService>(BillingsService);
     billingRepo = module.get<Repository<Billing>>(getRepositoryToken(Billing));
-    emailsService = module.get<EmailsService>(EmailsService);
-    invoicesService = module.get<InvoicesService>(InvoicesService);
+    kafkaClient = module.get<ClientProxy>('KAFKA_SERVICE');
   });
 
-  it('should process a new record and call InvoicesService and EmailsService', async () => {
+  it('should publish invoice_generation event for new records', async () => {
     const record = mockRecord();
-    jest.spyOn(billingRepo, 'findOne').mockResolvedValue(null);
-    jest.spyOn(billingRepo, 'save').mockResolvedValue(record as any);
+    jest.spyOn(billingRepo, 'find').mockResolvedValue([]);
 
     await service.processRecords([record]);
 
-    expect(invoicesService.generateInvoice).toHaveBeenCalledWith(record);
-    expect(emailsService.sendEmail).toHaveBeenCalledWith(record.email, 'Invoice generated');
-    expect(billingRepo.save).toHaveBeenCalledWith(record);
+    expect(kafkaClient.emit).toHaveBeenCalledWith('invoice_generation', record);
   });
 
-  it('should not process records already processed', async () => {
+  it('should not publish event for already processed records', async () => {
     const record = mockRecord();
-
-    jest.spyOn(billingRepo, 'findOne').mockResolvedValue(record as any);
+    jest.spyOn(billingRepo, 'find').mockResolvedValue([{ id: 'any_id', ...record }]);
 
     await service.processRecords([record]);
 
-    expect(invoicesService.generateInvoice).not.toHaveBeenCalled();
-    expect(emailsService.sendEmail).not.toHaveBeenCalled();
-    expect(billingRepo.save).not.toHaveBeenCalled();
+    expect(kafkaClient.emit).not.toHaveBeenCalled();
   });
 
-  it('should catch errors while processing records', async () => {
+  it('should not catch errors while processing records', async () => {
     const record = mockRecord()
-
-    jest.spyOn(billingRepo, 'findOne').mockRejectedValue(new Error('Database error'));
+    jest.spyOn(billingRepo, 'find').mockRejectedValue(new Error('Database error'));
 
     await expect(service.processRecords([record])).rejects.toThrow('Database error');
+  });
+
+  it('should not publish event when no new records are found', async () => {
+    jest.spyOn(billingRepo, 'find').mockResolvedValue([]);
+
+    await service.processRecords([]);
+
+    expect(kafkaClient.emit).not.toHaveBeenCalled();
   });
 });

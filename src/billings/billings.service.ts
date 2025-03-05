@@ -1,9 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Billing } from './billing.entity';
-import { Repository } from 'typeorm';
-import { EmailsService } from './../emails/emails.service';
-import { InvoicesService } from './../invoices/invoices.service';
+import { In, Repository } from 'typeorm';
+import { ClientProxy } from '@nestjs/microservices';
 
 export type BillingRecord = {
   name: string;
@@ -18,21 +17,24 @@ export type BillingRecord = {
 export class BillingsService {
   constructor(
     @InjectRepository(Billing) private billingRepo: Repository<Billing>,
-    private readonly emailsService: EmailsService,
-    private readonly invoicesService: InvoicesService,
+    @Inject('KAFKA_SERVICE') private readonly kafkaClient: ClientProxy
   ) {}
 
   async processRecords(records: BillingRecord[]): Promise<void> {
-    for (const record of records) {
-      const exists = await this.billingRepo.findOne({ where: { debtId: record.debtId } });
+    if (records.length === 0) return
 
-      if (exists) {
-        continue
-      }
+    const existingDebtIds = new Set(
+      (await this.billingRepo.find({
+        where: { debtId: In(records.map(record => record.debtId)) }
+      })).map(record => record.debtId)
+    )
 
-      const invoice = await this.invoicesService.generateInvoice(record);
-      await this.emailsService.sendEmail(record.email, invoice);
-      await this.billingRepo.save(record);
-    }
+    const newRecords = records.filter(record => !existingDebtIds.has(record.debtId))
+    
+    if (newRecords.length === 0) return
+
+    newRecords.forEach(record => {
+      this.kafkaClient.emit('invoice_generation', record)
+    })
   }
 }

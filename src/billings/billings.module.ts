@@ -6,9 +6,10 @@ import { CsvParserService } from './../utils/csv-parser.service';
 import { Billing } from './billing.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { BillingsService } from './billings.service';
+import { MessagingModule } from '../messaging/messaging.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Billing])],
+  imports: [TypeOrmModule.forFeature([Billing]), MessagingModule],
   controllers: [BillingsController],
   providers: [
     BillingsService,
