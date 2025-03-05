@@ -6,10 +6,24 @@ import { CsvParserService } from './../utils/csv-parser.service';
 import { Billings } from './billings.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { BillingsService } from './billings.service';
-import { MessagingModule } from '../messaging/messaging.module';
+import { ClientsModule, Transport } from '@nestjs/microservices';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Billings]), MessagingModule],
+  imports: [
+    ClientsModule.register([
+      {
+        name: 'KAFKA_CLIENT',
+        transport: Transport.KAFKA,
+        options: {
+          client: {
+            clientId: 'billings-api',
+            brokers: ['kafka:9092'],
+          },
+        },
+      },
+    ]),
+    TypeOrmModule.forFeature([Billings])
+  ],
   controllers: [BillingsController],
   providers: [
     BillingsService,

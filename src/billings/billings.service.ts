@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Billings } from './billings.entity';
 import { In, Repository } from 'typeorm';
-import { ClientProxy } from '@nestjs/microservices';
+import { ClientKafka } from '@nestjs/microservices';
 
 export type BillingRecord = {
   name: string;
@@ -17,7 +17,7 @@ export type BillingRecord = {
 export class BillingsService {
   constructor(
     @InjectRepository(Billings) private billingsRepo: Repository<Billings>,
-    @Inject('KAFKA_SERVICE') private readonly kafkaClient: ClientProxy
+    @Inject('KAFKA_CLIENT') private readonly kafkaClient: ClientKafka
   ) {}
 
   async processRecords(records: BillingRecord[]): Promise<void> {
