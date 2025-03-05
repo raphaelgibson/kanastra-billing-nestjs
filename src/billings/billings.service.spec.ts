@@ -3,12 +3,12 @@ import { BillingRecord, BillingsService } from './billings.service';
 import { Repository } from 'typeorm';
 import { Billings } from './billings.entity';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { ClientProxy } from '@nestjs/microservices';
+import { ClientKafka } from '@nestjs/microservices';
 
 describe('BillingsService', () => {
   let service: BillingsService;
   let billingsRepo: Repository<Billings>;
-  let kafkaClient: ClientProxy;
+  let kafkaClient: ClientKafka;
 
   function mockRecord(): BillingRecord {
     return {
@@ -22,7 +22,7 @@ describe('BillingsService', () => {
   }
 
   beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
+    const moduleFixture: TestingModule = await Test.createTestingModule({
       providers: [
         BillingsService,
         {
@@ -32,31 +32,31 @@ describe('BillingsService', () => {
           },
         },
         {
-          provide: 'KAFKA_SERVICE',
+          provide: 'KAFKA_CLIENT',
           useValue: {
             emit: jest.fn(),
           },
-        }
+        },
       ],
     }).compile();
 
-    service = module.get<BillingsService>(BillingsService);
-    billingsRepo = module.get<Repository<Billings>>(getRepositoryToken(Billings));
-    kafkaClient = module.get<ClientProxy>('KAFKA_SERVICE');
+    service = moduleFixture.get<BillingsService>(BillingsService);
+    billingsRepo = moduleFixture.get<Repository<Billings>>(getRepositoryToken(Billings));
+    kafkaClient = moduleFixture.get<ClientKafka>('KAFKA_CLIENT');
   });
 
-  it('should publish invoice_generation event for new records', async () => {
+  it('should publish generate.invoice event for new records', async () => {
     const record = mockRecord();
     jest.spyOn(billingsRepo, 'find').mockResolvedValue([]);
 
     await service.processRecords([record]);
 
-    expect(kafkaClient.emit).toHaveBeenCalledWith('invoice_generation', record);
+    expect(kafkaClient.emit).toHaveBeenCalledWith('generate.invoice', record);
   });
 
   it('should not publish event for already processed records', async () => {
     const record = mockRecord();
-    jest.spyOn(billingsRepo, 'find').mockResolvedValue([{ id: 'any_id', ...record }]);
+    jest.spyOn(billingsRepo, 'find').mockResolvedValue([{ id: 123, ...record }]);
 
     await service.processRecords([record]);
 

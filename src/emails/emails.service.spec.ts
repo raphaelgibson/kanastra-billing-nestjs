@@ -5,11 +5,11 @@ describe('EmailsService', () => {
   let service: EmailsService;
 
   beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
+    const moduleFixture: TestingModule = await Test.createTestingModule({
       providers: [EmailsService],
     }).compile();
 
-    service = module.get<EmailsService>(EmailsService);
+    service = moduleFixture.get<EmailsService>(EmailsService);
   });
 
   it('should send an e-mail', async () => {

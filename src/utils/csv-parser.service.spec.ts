@@ -7,11 +7,11 @@ describe('CsvParserService', () => {
   const mockInvalidCsvData = 'invalid\ndata';
 
   beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
+    const moduleFixture: TestingModule = await Test.createTestingModule({
       providers: [CsvParserService],
     }).compile();
 
-    service = module.get<CsvParserService>(CsvParserService);
+    service = moduleFixture.get<CsvParserService>(CsvParserService);
   });
 
   it('should parse a valid CSV and return the correct records', async () => {

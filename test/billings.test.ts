@@ -5,13 +5,13 @@ import { AppModule } from '../src/app.module';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Billings } from '../src/billings/billings.entity';
 import { Repository } from 'typeorm';
-import { ClientProxy } from '@nestjs/microservices';
+import { ClientKafka } from '@nestjs/microservices';
 import { of } from 'rxjs';
 
 describe('Billings (e2e)', () => {
   let app: INestApplication;
   let billingsRepository: Repository<Billings>
-  let kafkaClient: ClientProxy;
+  let kafkaClient: ClientKafka;
 
   const mockCsvData = `name,governmentId,email,debtAmount,debtDueDate,debtId\nJohn Doe,12345678900,johndoe@kanastra.com.br,1000.00,2025-01-01,1adb6ccf-ff16-467f-bea7-5f05d494280f`;
   const mockInvalidCsvData = 'invalid\ndata';
@@ -24,13 +24,12 @@ describe('Billings (e2e)', () => {
           provide: getRepositoryToken(Billings),
           useValue: {
             save: jest.fn(),
-            findOne: jest.fn(),
           },
         },
         {
           provide: 'KAFKA_SERVICE',
           useValue: {
-            emit: jest.fn(),
+            emit: jest.fn().mockImplementation(() => of(undefined)),
           },
         },
       ]
@@ -41,7 +40,7 @@ describe('Billings (e2e)', () => {
     await app.init();
 
     billingsRepository = moduleFixture.get<Repository<Billings>>(getRepositoryToken(Billings));
-    kafkaClient = moduleFixture.get<ClientProxy>('KAFKA_SERVICE');
+    kafkaClient = moduleFixture.get<ClientKafka>('KAFKA_CLIENT');
   });
 
   afterAll(async () => {
@@ -52,7 +51,7 @@ describe('Billings (e2e)', () => {
     jest.clearAllMocks();
   })
 
-  it('should upload a CSV file and process it by emitting invoice_generation event', async () => {
+  it('should upload a CSV file and process it by emitting generate.invoice event', async () => {
     const fileBuffer = Buffer.from(mockCsvData, 'utf-8');
 
     jest.spyOn(billingsRepository, 'save').mockResolvedValue({} as any);
@@ -64,8 +63,7 @@ describe('Billings (e2e)', () => {
       .expect(201);
 
     expect(response.body.message).toBe('Arquivo processado com sucesso');
-    // expect(billingsRepository.save).toHaveBeenCalled();
-    expect(emitSpy).toHaveBeenCalledWith('invoice_generation', expect.objectContaining({
+    expect(emitSpy).toHaveBeenCalledWith('generate.invoice', expect.objectContaining({
       debtAmount: '1000.00',
       debtDueDate: '2025-01-01',
       debtId: '1adb6ccf-ff16-467f-bea7-5f05d494280f',

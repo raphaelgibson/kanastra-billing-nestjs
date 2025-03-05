@@ -25,7 +25,7 @@ describe('BillingsController', () => {
   }
 
   beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
+    const moduleFixture: TestingModule = await Test.createTestingModule({
       controllers: [BillingsController],
       providers: [
         {
@@ -43,9 +43,9 @@ describe('BillingsController', () => {
       ],
     }).compile();
 
-    controller = module.get<BillingsController>(BillingsController);
-    csvParserService = module.get<CsvParserService>(CsvParserService);
-    billingsService = module.get<BillingsService>(BillingsService);
+    controller = moduleFixture.get<BillingsController>(BillingsController);
+    csvParserService = moduleFixture.get<CsvParserService>(CsvParserService);
+    billingsService = moduleFixture.get<BillingsService>(BillingsService);
   });
 
   it('should call BillingService with correct params', async () => {

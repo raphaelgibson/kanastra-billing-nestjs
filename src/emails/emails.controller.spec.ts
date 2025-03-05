@@ -18,7 +18,7 @@ describe('EmailsController', () => {
   };
 
   beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
+    const moduleFixture: TestingModule = await Test.createTestingModule({
       controllers: [EmailsController],
       providers: [
         {
@@ -28,8 +28,8 @@ describe('EmailsController', () => {
       ],
     }).compile();
 
-    controller = module.get<EmailsController>(EmailsController);
-    emailsService = module.get<EmailsService>(EmailsService);
+    controller = moduleFixture.get<EmailsController>(EmailsController);
+    emailsService = moduleFixture.get<EmailsService>(EmailsService);
 
     logSpy = jest.spyOn(Logger.prototype, 'log').mockImplementation();
   });

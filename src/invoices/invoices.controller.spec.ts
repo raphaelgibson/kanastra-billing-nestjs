@@ -1,14 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { InvoicesController } from './invoices.controller';
 import { InvoicesService } from './invoices.service';
-import { ClientProxy } from '@nestjs/microservices';
 import { Logger } from '@nestjs/common';
 
 describe('InvoicesController', () => {
   let controller: InvoicesController;
   let invoicesService: InvoicesService;
   let logSpy: jest.SpyInstance;
-  let client: ClientProxy;
 
   const mockInvoice = {
     name: 'John Doe',
@@ -20,7 +18,7 @@ describe('InvoicesController', () => {
   };
 
   beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
+    const moduleFixture: TestingModule = await Test.createTestingModule({
       controllers: [InvoicesController],
       providers: [
         {
@@ -38,27 +36,21 @@ describe('InvoicesController', () => {
       ],
     }).compile();
 
-    controller = module.get<InvoicesController>(InvoicesController);
-    invoicesService = module.get<InvoicesService>(InvoicesService);
-    client = module.get<ClientProxy>('KAFKA_SERVICE');
+    controller = moduleFixture.get<InvoicesController>(InvoicesController);
+    invoicesService = moduleFixture.get<InvoicesService>(InvoicesService);
 
     logSpy = jest.spyOn(Logger.prototype, 'log').mockImplementation();
   });
 
-  it('should process InvoicesService.generateInvoice() and emit email_sending event', async () => {
+  it('should call InvoicesService.generateInvoice() and logs with correct params', async () => {
     await controller.handleInvoiceGeneration(mockInvoice);
 
     expect(invoicesService.generateInvoice).toHaveBeenCalledWith(mockInvoice);
-    expect(client.emit).toHaveBeenCalledWith('email_sending', {
-      email: mockInvoice.email,
-      invoice: 'Invoice #12345',
-    });
-    
     expect(logSpy).toHaveBeenCalledWith(
       `Received message to generate invoice for ${mockInvoice.name}`,
     );
     expect(logSpy).toHaveBeenCalledWith(
-      `Invoice generated: Invoice #12345. Publishing email_sending event...`,
+      `Invoice generated: Invoice #12345.`,
     );
   });
 
@@ -66,7 +58,5 @@ describe('InvoicesController', () => {
     jest.spyOn(invoicesService, 'generateInvoice').mockRejectedValue(new Error('Service Error'));
 
     await expect(controller.handleInvoiceGeneration(mockInvoice)).rejects.toThrow('Service Error');
-
-    expect(client.emit).not.toHaveBeenCalled();
   });
 });
